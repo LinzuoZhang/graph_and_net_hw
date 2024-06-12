@@ -1,6 +1,7 @@
 import random
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class Vertices:
@@ -93,25 +94,33 @@ class UniformGraphPartition:
         G = nx.Graph()
         for i in range(self.n):
             G.add_node(i)
+
+        # Add edges
         for i in range(self.n):
             for j in range(i+1, self.n):
                 if self.vertices[i].group_id == self.vertices[j].group_id:
                     G.add_edge(i, j)
+
         G.add_weighted_edges_from([(i, j, self.edge[i][j])
                                    for i in range(self.n) for j in range(i+1, self.n)])
+
         pos = {}
-        color = []
-        pos0 = 0
-        pos1 = 0
-        for i in range(self.n):
-            if self.vertices[i].group_id == 0:
-                pos[i] = (0, pos0)
-                pos0 = pos0 + 1
-                color.append('r')
-            else:
-                pos[i] = (1, pos1)
-                pos1 = pos1 + 1
-                color.append('b')
+        color = ['r' for i in range(self.n)]
+
+        # Group 0 on the left arc
+        theta0 = np.linspace(np.pi, 2*np.pi, int(self.n/2))
+        r0 = 1
+        for idx, i in enumerate(v for v in range(self.n) if self.vertices[v].group_id == 0):
+            pos[i] = (r0 * np.cos(theta0[idx])+r0,
+                      r0 * np.sin(theta0[idx])+r0-1)
+            color[i] = 'r'
+        # Group 1 on the right arc
+        theta1 = np.linspace(0, np.pi, int(self.n/2))
+        r1 = 1
+        for idx, i in enumerate(v for v in range(self.n) if self.vertices[v].group_id == 1):
+            pos[i] = (r1 * np.cos(theta1[idx])+r1, r1 * np.sin(theta1[idx])+r1)
+            color[i] = 'b'
+
         nx.draw(G, pos, node_color=color, with_labels=True,
                 node_size=500, font_size=10, font_weight='bold')
         edge_labels = {edge: f'{weight:.2f}' for edge,
@@ -122,7 +131,7 @@ class UniformGraphPartition:
 
 
 if __name__ == "__main__":
-    graphPartition = UniformGraphPartition(100)
+    graphPartition = UniformGraphPartition(4)
     costs = graphPartition.partition()
     graphPartition.plotCost(costs)
     graphPartition.PlotResult()
